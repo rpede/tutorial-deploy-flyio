@@ -18,7 +18,7 @@ export default function PostPreview({ post }: { post: Post }) {
               <></>
             )}
           </small>
-          <p>{post.content}</p>
+          {/* <p>{post.content}</p> */}
           <div className="card-actions justify-end">
             <Link to={`/post/${post.id}`} className="btn btn-primary">
               Read
