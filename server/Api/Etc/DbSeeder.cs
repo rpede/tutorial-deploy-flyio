@@ -56,7 +56,7 @@ print('Hello World!')
 
 The file system key in Linux.
 
-```sh
+```bash
 # Change directory
 cd Documents
 
@@ -130,7 +130,7 @@ Example: `<image>`
 
 Run a shell from a container image.
 
-```sh
+```bash
 docker run -it --rm <image> sh
 ```
 
@@ -138,19 +138,19 @@ docker run -it --rm <image> sh
 
 Show running containers.
 
-```sh
+```bash
 docker ps
 ```
 
 Show all containers, even those that are not actively running.
 
-```sh
+```bash
 docker ps
 ```
 
 ### Shell in running container
 
-```sh
+```bash
 docker exec -it <id or name> sh
 ```
 
@@ -158,13 +158,13 @@ You can find ID and Name with `docker ps` command.
 
 ### Show logs
 
-```sh
+```bash
 docker logs <id or name>
 ```
 
 ### Build an image
 
-```sh
+```bash
 docker build <directory>
 ```
 
@@ -174,7 +174,7 @@ It will create with a long HEX code as name.
 
 You can name and version an image by tagging it.
 
-```sh
+```bash
 docker build --tag <name>:<version> <directory>
 ```
                     ",
