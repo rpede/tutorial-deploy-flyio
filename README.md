@@ -259,9 +259,7 @@ that a container is started after the container it depends on.
 
 Add the following to the `server` service section in `compose.yml`:
 
-```yml     
-
-You can try it out by running:
+```yml
     depends_on:
       db:
         condition: service_healthy
