@@ -602,4 +602,27 @@ fly open
 
 ## Cleanup
 
-TODO instructions on how to destroy apps again
+To avoid potential being billing we better clean up again after ourselves by
+removing the fly apps again.
+
+To show the fly apps you have run:
+
+```bash
+fly apps list
+```
+
+Destroy the apps you created as part of this guide.
+
+```bash
+fly apps destroy <your-client-app-name>
+fly apps destroy <your-server-app-name>
+```
+
+Where `<your-client-app-name>` and `<your-server-app-name>` are names from `fly
+apps list`.
+
+Go to <https://console.neon.tech/> then setting for "tutorial-deploy-flyio" project.
+
+![Neon project settings](./docs/neon-project-settings.png)
+
+All the way down at the bottom of the page, click "Delete project" button.
