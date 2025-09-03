@@ -41,11 +41,11 @@ One for each C# project that are part of the solution.
 We are using a multistage Dockerfile, so the final image only contains what's
 needed to run the server.
 The `dotnet/sdk` base images is required to run `dotnet publish`, but we only
-the smaller `dotnet/aspnet` image to run the compiled application.
+use the smaller `dotnet/aspnet` image to run the compiled application.
 
 Paths specified in a Dockerfile will be relative to its location.
 So when we copy files into the container image, we use a `COPY . /source` to
-copy everything from `server/` folder into `/source` within the build
+copy everything from `server/` folder on host into `/source` within the build
 container.
 
 ```Dockerfile
@@ -165,10 +165,12 @@ docker build client
 
 We can combine it all with a Docker Compose file.
 Not terribly useful for deploying to Fly.io, but pretty neat for onboarding new
-teammates up and running.
+teammates and getting them up and running.
 All they need to start the app is clone the repository and type `docker compose up`.
 
-Create a `compose.yml` file in the root of the repository.
+Change the `compose.yml` file in the root of the repository to this:     
+
+You can try it out by running:
 
 ```yml
 services:
@@ -257,7 +259,9 @@ that a container is started after the container it depends on.
 
 Add the following to the `server` service section in `compose.yml`:
 
-```bash
+```yml     
+
+You can try it out by running:
     depends_on:
       db:
         condition: service_healthy
@@ -281,7 +285,13 @@ But what does being healthy mean for a database?
 Luckily, they included `pg_isready` shell command to answer such deep
 philosophical question.
 I'm joking here.
-Being healthy for a database simply means that is ready to accept incoming
+Being healthy for a database simply means that it     
+
+You can try it out by running:     
+
+You can try it out by running:     
+
+You can try it out by running: is ready to accept incoming
 connections and there is a tool to test this in the `postgres` image.
 
 Under the `db` section in `compose.yml`, add:
@@ -317,7 +327,7 @@ You can try it out by opening <http://localhost:8080>
 
 Here is the full `compose.yml` for reference, in case something is still wrong.
 
-```sh
+```yml
 services:
   client:
     build: client/
