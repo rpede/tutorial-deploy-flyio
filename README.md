@@ -321,7 +321,7 @@ docker compose ps
 ```
 
 Then you should see all 3 containers running.
-You can try it out by opening <http://localhost:8080>
+You can try it out by opening <http://localhost>
 
 Here is the full `compose.yml` for reference, in case something is still wrong.
 
