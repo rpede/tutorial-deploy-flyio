@@ -107,12 +107,60 @@ build.
 ### Client
 
 Moving over to the client.
+
+This project is setup such that `client` use relative paths for all API calls.
+It means that API requests will hit the HTTP server serving the front-end then
+it will forward the request to the back-end HTTP server.
+When running `npm run dev` it starts development web-server supporting
+hot-reloading.
+You can see the configuration for forwarding in `client/vite.config.ts`.
+All great for development, but `npm run dev` should not be used in production.
+For production, we will use nginx instead.
+To make everything work, we need a custom config.
+Create the file `client/nginx.conf.template` with:
+
+```nginx
+map $http_connection $connection_upgrade {
+  "~*Upgrade" $http_connection;
+  default keep-alive;
+}
+
+server {
+  listen        80;
+
+  root /usr/share/nginx/html;
+  index index.html index.htm;
+
+  location /api {
+      proxy_pass         $BACKEND_URL;
+      proxy_http_version 1.1;
+      proxy_set_header   Upgrade $http_upgrade;
+      proxy_set_header   Connection $connection_upgrade;
+      proxy_set_header   Host $host;
+      proxy_cache_bypass $http_upgrade;
+      proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header   X-Forwarded-Proto $scheme;
+  }
+  location / {
+      try_files $uri $uri/ /index.html index.html;
+  }
+}
+```
+
+The `client` (React) app use relative URLs for all request to `server`.
+We therefore have a `location /api` block which proxy all request for `/api` to
+the URL described in `proxy_pass`.
+We use `$BACKEND_URL` as a placeholder that will be substituted with an
+environment variable.
+This allows us to control what URL request will be proxied from an environment
+variable on the container.
+
 Create a new file in `client/` folder named `Dockerfile`.
 Insert the following:
 
 ```Dockerfile
 # Create a stage for building the application.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -125,17 +173,20 @@ RUN npm run build
 
 # Stage 2: Serve the React app using nginx
 FROM nginx:alpine AS final
+# Custom nginx config
+COPY nginx.conf.template /
 # Copy the build output from the first stage to nginx's html directory
 COPY --from=build /app/dist /usr/share/nginx/html
 # Expose port 80
 EXPOSE 80
 # Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD envsubst '$BACKEND_URL' < /nginx.conf.template > /etc/nginx/conf.d/default.conf \
+  && nginx -g 'daemon off;'
 ```
 
 We need a base image with `node` to transpile the code.
-But we don't need node for serving the JavaScript files, however we need
-something like `nginx` instead.
+But we don't need node for serving the JavaScript files, however we do need
+`nginx` instead.
 Perfect candidate for a two stage build!
 
 Here is a quick breakdown of the steps.
@@ -151,9 +202,18 @@ Here is a quick breakdown of the steps.
 **Final stage**
 
 5. Use `nginx:alpine` as base image.
-6. Copy build output from build stage to default folder for nginx.
-7. Expose port 80 because that is the default port for nginx and HTTP.
-8. Start nginx with `nginx -g daemon off;`
+6. Copy our custom nginx config from host.
+7. Copy build output from build stage to default folder for nginx.
+8. Expose port 80 because that is the default port for nginx and HTTP.
+9. Replace `BACKEND_URL` in nginx config and start nginx
+
+The part `envsubst '$BACKEND_URL' < /nginx.conf.template > /etc/nginx/conf.d/default.conf` needs a bit of extra explanation.
+The command `envsubst` is short for environment variable substitution.
+It will substitute placeholders in its input for environment variables in its
+output.
+`/nginx.conf.template` is input and `/etc/nginx/conf.d/default.conf`
+Thereby writing a configuration file for nginx when container is run that
+includes a proxy URL given by an environment variable to the container.
 
 Try it out by running:
 
@@ -168,7 +228,7 @@ Not terribly useful for deploying to Fly.io, but pretty neat for onboarding new
 teammates and getting them up and running.
 All they need to start the app is clone the repository and type `docker compose up`.
 
-Change the `compose.yml` file in the root of the repository to this:     
+Change the `compose.yml` file in the root of the repository to this:
 
 You can try it out by running:
 
@@ -178,6 +238,8 @@ services:
     build: client/
     ports:
       - "80:80"
+    environment:
+      - BACKEND_URL=http://server:8080
   server:
     build: server/
     environment:
@@ -201,13 +263,18 @@ services:
 It defines 3 services (client, server and db) which can be manged together as a
 single unit.
 
+For the **client** container, we use `BACKEND_URL` to tell how it can talk to
+the **server** container.
+And for the **server** service we set `ConnectionStrings__AppDb` to tell it how
+it can talk to the **db** container.
+
 Try it out by running:
 
 ```bash
 docker compose up -d
 ```
 
-If everything goes well you should see 3 containers when running:
+We hope to see 3 containers when running:
 
 ```bash
 docker compose ps
@@ -283,11 +350,11 @@ But what does being healthy mean for a database?
 Luckily, they included `pg_isready` shell command to answer such deep
 philosophical question.
 I'm joking here.
-Being healthy for a database simply means that it     
+Being healthy for a database simply means that it
 
-You can try it out by running:     
+You can try it out by running:
 
-You can try it out by running:     
+You can try it out by running:
 
 You can try it out by running: is ready to accept incoming
 connections and there is a tool to test this in the `postgres` image.
@@ -321,7 +388,7 @@ docker compose ps
 ```
 
 Then you should see all 3 containers running.
-You can try it out by opening <http://localhost>
+You can try it out by opening <http://localhost:8080>
 
 Here is the full `compose.yml` for reference, in case something is still wrong.
 
@@ -492,74 +559,7 @@ One last adjustment for the server, is to open `server/fly.toml` and change
 
 ### Deploy Client
 
-This project is setup such that `client` use relative paths for all API calls.
-It means that API requests will hit the HTTP server serving the front-end then
-it will forward the request to the back-end HTTP server.
-When running `npm run dev` it starts development web-server supporting
-hot-reloading.
-You can see the configuration for forwarding in `client/vite.config.ts`.
-All great for development, but `npm run dev` should not be used in production,
-that's why we have a Dockerfile serving using nginx.
-Currently, nginx is configured to forward (proxy) requests, so it works with
-`docker compose` with a hard-coded address.
-We need to change it such that the address can be set with environment
-variable, so we can make it work when deployed too.
-
-Configuring forwarding this way requires some nginx config trickery.
-It's a bit beyond this tutorial to delve too much into how nginx config work, so
-I will leave out some details.
-
-First, create a template to set nginx config variable from an environment variable.
-
-Create the file `client/variables.conf.template` with:
-
-```nginx
-map $host $backend {
-  default "$BACKEND";
-}
-```
-
-The environment variables are called `BACKEND` and the nginx variable is
-`backend`.
-
-To use the environment variables for forwarding (`proxy_pass`), we need to open
-`client/nginx.conf` and change the line:
-
-```nginx
-      proxy_pass         server;
-```
-
-To these lines:
-
-```nginx
-      resolver 127.0.0.11 [::1];
-      set $backend_uri $backend$uri$is_args$args;
-      proxy_pass         $backend_uri;
-```
-
-To keep it working with docker compose, we need to set the new `BACKEND`
-environment variable in `compose.yml`.
-Here is a truncated version of what it will look like.
-
-```yml
-services:
-  client:
-    build: client/
-    ports:
-      - "80:80"
-    depends_on:
-      - server
-    environment:
-      - BACKEND=http://server:8080
-  ...
-```
-
-The resources I used to figure this out are:
-
-- [Docker Hub - Nginx reference](https://hub.docker.com/_/nginx#using-environment-variables-in-nginx-configuration-new-in-119)
-- [serverfault - How can I use environment variables in Nginx.conf](https://serverfault.com/questions/577370/how-can-i-use-environment-variables-in-nginx-conf)
-
-We can now deploy the `client` similar to how we did with the `server`.
+We can now deploy the `client` similar to what we did with the `server`.
 
 ```bash
 cd client
