@@ -7,9 +7,11 @@
     - [Server](#server)
     - [Client](#client)
     - [Docker compose](#docker-compose)
+  - [Hosted Postgres](#hosted-postgres)
   - [Fly.io](#flyio)
-    - [Backend](#backend)
-    - [Client](#client)
+    - [Deploy Backend](#deploy-backend)
+    - [Deploy Client](#deploy-client)
+  - [Cleanup](#cleanup)
 <!--toc:end-->
 
 ## Introduction
