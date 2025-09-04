@@ -49,28 +49,28 @@ copy everything from `server/` folder on host into `/source` within the build
 container.
 
 ```Dockerfile
-# Create a stage for building the application.
+# 1. Create a stage for building the application.
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
-# Copy everything in current directory (server/) into /source on build container
+# 2. Copy everything in current directory (server/) into /source on build container
 COPY . /source
-# Change container working directory to /source/api
+# 3. Change container working directory to /source/api
 WORKDIR /source/Api
-# Build the application with Release configuration and for linux-x64 since Fly
+# 4. Build the application with Release configuration and for linux-x64 since Fly
 # runs.
 RUN dotnet publish --configuration Release --no-self-contained -o /app
 
-# Create a new stage for running the application with minimal runtime
+# 5. Create a new stage for running the application with minimal runtime
 # dependencies.
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
-# Change container working directory to /app
+# 6. Change container working directory to /app
 WORKDIR /app
-# Copy everything needed to run the app from the "build" stage.
+# 7. Copy everything needed to run the app from the "build" stage.
 COPY --from=build /app .
-# Switch to a non-privileged user (defined in the base image) that the app will run under.
+# 8. Switch to a non-privileged user (defined in the base image) that the app will run under.
 USER $APP_UID
-# Describe what port the server will listen on.
+# 9. Describe what port the server will listen on.
 EXPOSE 8080
-# Start Api
+# 10. Start Api
 CMD ["dotnet", "Api.dll"]
 ```
 
@@ -101,7 +101,7 @@ You can try it out by running:
 docker build server
 ```
 
-Notice that here `server` refer to the directory containing the Dockerfile to
+Note that `server` refer to the directory containing the Dockerfile to
 build.
 
 ### Client
@@ -159,27 +159,27 @@ Create a new file in `client/` folder named `Dockerfile`.
 Insert the following:
 
 ```Dockerfile
-# Create a stage for building the application.
+# 1. Create a stage for building the application.
 FROM node:22-alpine AS build
 WORKDIR /app
-# Copy package.json and package-lock.json
+# 2. Copy package.json and package-lock.json
 COPY package*.json ./
-# Install dependencies
+# 3. Install dependencies
 RUN npm clean-install
 # Copy the rest of the application source code
 COPY . .
-# Build the React application
+# 4. Build the React application
 RUN npm run build
 
-# Stage 2: Serve the React app using nginx
+# 5. Stage 2: Serve the React app using nginx
 FROM nginx:alpine AS final
-# Custom nginx config
+# 6. Custom nginx config
 COPY nginx.conf.template /
-# Copy the build output from the first stage to nginx's html directory
+# 7. Copy the build output from the first stage to nginx's html directory
 COPY --from=build /app/dist /usr/share/nginx/html
-# Expose port 80
+# 8. Expose port 80
 EXPOSE 80
-# Start nginx
+# 9. Start nginx
 CMD envsubst '$BACKEND_URL' < /nginx.conf.template > /etc/nginx/conf.d/default.conf \
   && nginx -g 'daemon off;'
 ```
@@ -228,6 +228,9 @@ Not terribly useful for deploying to Fly.io, but pretty neat for onboarding new
 teammates and getting them up and running.
 All they need to start the app is clone the repository and type `docker compose up`.
 
+There is already a `compose.yml` file in the root of the repository, but
+currently it only contains a definition for the database.
+Let's add `client` and `server` to it.
 Change the `compose.yml` file in the root of the repository to this:
 
 ```yml
@@ -380,7 +383,7 @@ docker compose ps
 ```
 
 Then you should see all 3 containers running.
-You can try it out by opening <http://localhost:8080>
+You can try it out by opening <http://localhost>
 
 Here is the full `compose.yml` for reference, in case something is still wrong.
 
