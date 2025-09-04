@@ -140,6 +140,7 @@ server {
       proxy_cache_bypass $http_upgrade;
       proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header   X-Forwarded-Proto $scheme;
+      proxy_ssl_server_name on;
   }
   location / {
       try_files $uri $uri/ /index.html index.html;
@@ -572,16 +573,11 @@ fly open
 
 We haven't set the `BACKEND` environment variable yet, so you get an error.
 
-![500 error](./docs/backend-error.png)
-
-If you press <kbd>CTRL</kbd>+<kbd>SHIFT</kbd>+<kbd>i</kbd> and select "Network"
-tab, you will see it's a 500 when fetching data from API.
-
-To fix it, set the variable in `client/fly.toml` like this:
+To fix it, set the variable in `client/fly.toml` by appending this:
 
 ```toml
 [env]
-  BACKEND = "http://<backend-name>.fly.dev"
+  BACKEND_URL = "https://<backend-name>.fly.dev"
 ```
 
 Replace `<backend-name>` with name of the server app, which you can find by
