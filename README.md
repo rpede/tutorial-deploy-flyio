@@ -230,8 +230,6 @@ All they need to start the app is clone the repository and type `docker compose 
 
 Change the `compose.yml` file in the root of the repository to this:
 
-You can try it out by running:
-
 ```yml
 services:
   client:
@@ -350,13 +348,7 @@ But what does being healthy mean for a database?
 Luckily, they included `pg_isready` shell command to answer such deep
 philosophical question.
 I'm joking here.
-Being healthy for a database simply means that it
-
-You can try it out by running:
-
-You can try it out by running:
-
-You can try it out by running: is ready to accept incoming
+Being healthy for a database simply means that it is ready to accept incoming
 connections and there is a tool to test this in the `postgres` image.
 
 Under the `db` section in `compose.yml`, add:
