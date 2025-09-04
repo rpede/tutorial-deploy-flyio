@@ -18,6 +18,9 @@
 
 In this tutorial you will learn how to deploy a full-stack application to
 fly.io.
+Here is a screenshot of what the app looks like.
+
+![Demo app](./docs/result.png)
 
 We start by dockerizing the app.
 That means writing a Dockerfile for both client and server.
