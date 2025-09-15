@@ -464,6 +464,11 @@ You will need it for later.
 
 ## Fly.io
 
+> [!IMPORTANT]
+> This section assumes that you have flyctl installed.
+> See [Install flyctl](https://fly.io/docs/flyctl/install/) for instructions on
+> how to install it.
+
 The whole compose thing was a bit of a side-quest.
 Now, back to the main quest-line.
 Getting our app deployed to fly.io.
