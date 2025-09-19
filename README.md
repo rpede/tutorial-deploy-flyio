@@ -399,6 +399,8 @@ services:
       - "80:80"
     depends_on:
       - server
+    environment:
+      - BACKEND_URL=http://server:8080
   server:
     build: server/
     depends_on:
